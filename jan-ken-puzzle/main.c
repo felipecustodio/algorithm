@@ -18,27 +18,31 @@ int main(int argc, char const *argv[]) {
         for (j = 0; j < C; j++) {
             scanf("%d", &cell);
             switch (cell) {
-                case 0:
-                    cell = 0;
-                    break;
                 case 1:
                     cell = ROCK;
+                    b->pieces += 1;
                     break;
                 case 2:
                     cell = SCISSORS;
+                    b->pieces += 1;
                     break;
                 case 3:
                     cell = PAPER;
+                    b->pieces += 1;
                     break;
                 default:
-                    cell = 0;
+                    cell = EMPTY;
                     break;
             }
             b->content[i][j] = cell;
         }
     }
 
-    printBoard(b);
+    if (solve(b)) {
+        fprintf(stderr, "Solution found!\n");
+    } else {
+        fprintf(stderr, "Solution NOT found!\n");
+    }
 
     b = deleteBoard(b);
     b = NULL;
