@@ -1,4 +1,21 @@
-********
-*[2][4]*
-*[0][3]*
-********
+
+[*] Starting solver...
+
+[JUMP] 0,0 to 0,1
+[JUMP] 1,1 to 0,1
+[JUMP] 0,1 to 1,1
+
+[!] Solver finished - 0.000019s
+
+[SOLUTION]
+**************
+*[ R  ][ S! ]*
+*[    ][ P  ]*
+**************
+
+[*] Number of ways to get to a solution: 1
+[*] Number of distinct final states (solutions): 1
+
+1
+1
+1 2 3 

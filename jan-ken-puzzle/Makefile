@@ -11,7 +11,7 @@ SRC = ./main.c
 INCLUDES = .
 
 # compiler flags
-FLAGS = -g -std=c99 -Wall
+FLAGS = -g -std=c99 -O3
 
 all: compile
 
