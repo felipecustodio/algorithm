@@ -1,13 +1,16 @@
-# Caroline Jesuíno Nunes da Silva - 9293925
-# Felipe Scrochio Custódio - 9442688
-
-from copy import deepcopy
-import logging
+# Jan-Ken-Puzzle Solver
+# 9293925 Caroline
+# 9442688 Felipe
 import random
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from collections import OrderedDict
 
 hits = 0    # number of times a success state is found
+# positions of 4 connected neighbors
+rowNbr = [-1, 1, 0, 0]
+colNbr = [0, 0, -1, +1]
+# dictionary of bad pieces for each piece
+invalid_moves = {1: [0, 1, 3], 2: [0, 1, 2], 3: [0, 2, 3]}
+
 
 def computeHash(table, board):
     key = 0
@@ -17,68 +20,46 @@ def computeHash(table, board):
                 key ^= table[i][j][board[i][j]]
     return key
 
+
 def DFS(board, i, j, visited): 
     rows = len(board)
     cols = len(board[0])
 
-    rowNbr = [-1, 1, 0, 0]
-    colNbr = [0, 0, -1, +1]
-
     visited[i][j] = True
 
-    # Recur for all connected neighbours 
+    # visit all connected neighbors
     for k in range(4): 
         iNbr = i + rowNbr[k]
         jNbr = j + colNbr[k]
+        # check if safe
         if ((iNbr >= 0 and iNbr < rows) and (jNbr >= 0 and jNbr < cols)):
             if (not visited[iNbr][jNbr] and board[iNbr][jNbr]):
+                # visit neighbor
                 DFS(board, iNbr, jNbr, visited)
 
-def checkIslands(board):
-        rows = len(board)
-        cols = len(board[0])
-        # Make a bool array to mark visited cells. 
-        # Initially all cells are unvisited
-        visited = [[False for j in range(cols)] for i in range(rows)] 
-  
-        # Initialize count as 0 and travese  
-        # through the all cells of 
-        # given matrix 
-        count = 0
-        for i in range(rows): 
-            for j in range(cols): 
-                # If a cell with value 1 is not visited yet,  
-                # then new island found 
-                if visited[i][j] == False and board[i][j]: 
-                    # Visit all cells in this island
-                    # and increment island count 
-                    DFS(board, i, j, visited) 
-                    count += 1
-                    if (count > 1):
-                        return False
-        return True
 
-def checkMove(current, neighbor):
-    # rock
-    if (current == 1):
-        if neighbor in [0, 1, 3]:
-            return False
-        else:
-            return True
-    # scissors
-    if (current == 2):
-        if (neighbor in [0, 1, 2]):
-            return False
-        else:
-            return True
-    # paper
-    if (current == 3):
-        if (neighbor in [0, 2, 3]):
-            return False
-        else:
-            return True
-    # empty
-    return False
+def checkIslands(board):
+    rows = len(board)
+    cols = len(board[0])
+    # initialize cells as unvisited
+    visited = [[False for j in range(cols)] for i in range(rows)] 
+
+    # traverse all cells to find islands
+    count = 0
+    for i in range(rows): 
+        for j in range(cols): 
+            # if a cell with value 1 is not visited yet,  
+            # then new island found 
+            if visited[i][j] == False and board[i][j]: 
+                # visit all cells in this island
+                # and increment island count 
+                DFS(board, i, j, visited) 
+                count += 1
+                if (count > 1):
+                    # if there's more than one island,
+                    # board has no solution
+                    return False
+    return True
 
 
 def solve(cache, table, board, solutions, pieces):
@@ -86,17 +67,17 @@ def solve(cache, table, board, solutions, pieces):
     success = False
     state_hits = 0
 
+    rows = len(board)
+    cols = len(board[0])
+
     # check cache (memoization)
     key = computeHash(table, board)
     if key in cache:
-        if (cache[key][0]):
-            cache[key][1] += 1
-            hits = hits + cache[key][1]
         return cache[key]
 
     # check for islands
     if (not checkIslands(board)):
-        cache[key] = [False, state_hits]
+        cache[key] = [False, 0]
         return cache[key]
         
     # store solution if found
@@ -106,102 +87,42 @@ def solve(cache, table, board, solutions, pieces):
                 if (board[i][j] != 0):
                     solutions.append([i+1, j+1, board[i][j]])
                     cache[key] = [True, 1]
-                    hits = hits + 1
                     return cache[key]
 
     # check all alive pieces for possible jumps
     for i in range(len(board)):
         for j in range(len(board[i])):
             current = board[i][j]
-            # if current is not empty
+            # if current is piece
             if (current != 0):
-                # UP
-                if (i-1 >= 0):
-                    neighbor = board[i-1][j]
-                    if (checkMove(current, neighbor)):
-                        # execute jump
-                        board[i-1][j] = current
-                        board[i][j] = 0
-                        pieces -= 1
-                        
-                        # recursive call
-                        jump = solve(cache, table, deepcopy(board), solutions, pieces)
-                        if (jump[0]):
-                            success = True
-                            state_hits = state_hits + 1
-
-                        # undo jump
-                        board[i-1][j] = neighbor
-                        board[i][j] = current
-                        pieces += 1
-
-                 # DOWN
-                if (i+1 < len(board)):
-                    neighbor = board[i+1][j]
-                    if (checkMove(current, neighbor)):
-                        # execute jump
-                        board[i+1][j] = current
-                        board[i][j] = 0
-                        pieces -= 1
-                        
-                        # recursive call
-                        jump = solve(cache, table, deepcopy(board), solutions, pieces)
-                        if (jump[0]):
-                            success = True
-                            state_hits = state_hits + 1
-
-                        # undo jump
-                        board[i+1][j] = neighbor
-                        board[i][j] = current
-                        pieces += 1
-                
-                 # LEFT
-                if (j-1 >= 0):
-                    neighbor = board[i][j-1]
-                    if (checkMove(current, neighbor)):
-                        # execute jump
-                        board[i][j-1] = current
-                        board[i][j] = 0
-                        pieces -= 1
-                        
-                        # recursive call
-                        jump = solve(cache, table, deepcopy(board), solutions, pieces)
-                        if (jump[0]):
-                            success = True
-                            state_hits = state_hits + 1
-
-                        # undo jump
-                        board[i][j-1] = neighbor
-                        board[i][j] = current
-                        pieces += 1
-
-                 # RIGHT
-                if (j+1 < len(board[i])):
-                    neighbor = board[i][j+1]
-                    if (checkMove(current, neighbor)):
-                        # execute jump
-                        board[i][j+1] = current
-                        board[i][j] = 0
-                        pieces -= 1
-                        
-                        # recursive call
-                        jump = solve(cache, table, deepcopy(board), solutions, pieces)
-                        if (jump[0]):
-                            success = True
-                            state_hits = state_hits + 1
-
-                        # undo jump
-                        board[i][j+1] = neighbor
-                        board[i][j] = current
-                        pieces += 1
-    
-    # tried all possible jumps
+                # check all neighbors 
+                for k in range(4): 
+                    iNbr = i + rowNbr[k]
+                    jNbr = j + colNbr[k]
+                    # check if neighbor exists and is valid
+                    if ((iNbr >= 0 and iNbr < rows) and (jNbr >= 0 and jNbr < cols)):
+                        neighbor = board[iNbr][jNbr]
+                        if (neighbor not in invalid_moves[current]):
+                            # execute jump
+                            board[iNbr][jNbr] = current
+                            board[i][j] = 0
+                            pieces -= 1
+                            # recurse for new state
+                            jump = solve(cache, table, board, solutions, pieces)
+                            if (jump[0]):
+                                success = True
+                                state_hits += jump[1]
+                            # undo jump
+                            board[iNbr][jNbr] = neighbor
+                            board[i][j] = current
+                            pieces += 1
+    # tried all possible jumps for current state
     if (not success):
-        cache[key] = [False, state_hits]
+        cache[key] = [False, 0]
     else:
         cache[key] = [True, state_hits]
-        hits = hits + state_hits
     return cache[key]
+
 
 def main():
     # read board
@@ -209,10 +130,14 @@ def main():
     R = int(R)
     C = int(C)
     
+    # initialize empty boad
     pieces = 0
     board = [x[:] for x in [[0] * int(C)] * int(R)]
+
+    # initialize zobrist hashing table
     table = [[[random.randint(1,2**64 - 1) for i in range(4)]for j in range(C)] for k in range(R)]
        
+    # fill board
     for i in range(R):
         line = input().split()
         for j in range(C):
@@ -220,14 +145,15 @@ def main():
             if (board[i][j] != 0):
                 pieces += 1
     
-    # find all possible solutions
+    # search for solutions
     solutions = []
-    cache = {}
-    solve(cache, table, deepcopy(board), solutions, pieces)
+    cache = OrderedDict()
+    solve(cache, table, board, solutions, pieces)
+    hits = cache.popitem()[1][1]
 
-    # number of solutions
     print(hits)
     print(len(solutions))
+    # display sorted unique solutions
     for solution in sorted(solutions):
         for value in solution:
             print(str(value), end=' ')
