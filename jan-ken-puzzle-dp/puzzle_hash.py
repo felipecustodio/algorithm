@@ -4,7 +4,7 @@
 import random
 from collections import OrderedDict
 
-hits = 0    # number of times a success state is found
+
 # positions of 4 connected neighbors
 rowNbr = [-1, 1, 0, 0]
 colNbr = [0, 0, -1, +1]
@@ -63,7 +63,6 @@ def checkIslands(board):
 
 
 def solve(cache, table, board, solutions, pieces):
-    global hits
     success = False
     state_hits = 0
 
